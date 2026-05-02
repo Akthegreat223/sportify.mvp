@@ -1,0 +1,6 @@
+{
+  "name": "Sportify",
+  "description": "A mobile-first platform to find sports partners, join matches, and track performance stats.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["auth", "database", "realtime", "location"]
+}

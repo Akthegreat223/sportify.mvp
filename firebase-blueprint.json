@@ -1,0 +1,74 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "age": { "type": "number" },
+        "location": { "type": "object" },
+        "preferredSports": { "type": "array" },
+        "skillLevel": { "type": "string" },
+        "stats": { "type": "object" },
+        "rating": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "email"]
+    },
+    "Match": {
+      "title": "Match",
+      "description": "Sport match details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "sport": { "type": "string" },
+        "location": { "type": "string" },
+        "geo": { "type": "object" },
+        "dateTime": { "type": "string", "format": "date-time" },
+        "maxPlayers": { "type": "number" },
+        "players": { "type": "array" },
+        "creatorId": { "type": "string" },
+        "status": { "type": "string", "enum": ["upcoming", "ongoing", "completed"] },
+        "result": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sport", "location", "dateTime", "maxPlayers", "creatorId", "status"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Message in a chat room",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "matchId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderId", "text", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Registered user profiles"
+    },
+    "/matches/{matchId}": {
+      "schema": "Match",
+      "description": "Sport matches"
+    },
+    "/matches/{matchId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Messages for a specific match"
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Private messages between two users"
+    }
+  }
+}

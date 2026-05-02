@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // --- Users ---
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.size() >= 3 &&
+               data.uid == request.auth.uid &&
+               data.name is string && data.name.size() <= 100 &&
+               data.email is string && data.email.size() <= 100 &&
+               data.rating is number &&
+               data.stats is map;
+      }
+
+      allow get, list: if isSignedIn();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) &&
+                    request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                      'name', 'photoURL', 'age', 'location', 'preferredSports', 'skillLevel', 'stats', 'rating'
+                    ]);
+    }
+
+    // --- Matches ---
+    match /matches/{matchId} {
+      function isValidMatch(data) {
+        return data.sport is string &&
+               data.title is string &&
+               data.location is string && data.location.size() <= 200 &&
+               data.dateTime is string &&
+               data.maxPlayers is number && data.maxPlayers >= 2 &&
+               data.players is list &&
+               (data.creatorId == request.auth.uid || data.creatorId == 'system') &&
+               (data.creatorName == null || data.creatorName is string) &&
+               data.status in ['seeking_players', 'confirmed', 'upcoming', 'ongoing', 'completed'] &&
+               data.createdAt is string;
+      }
+
+      allow list, get: if true; 
+      allow create: if isSignedIn() && isValidMatch(request.resource.data);
+      
+      allow update: if isSignedIn() && (
+        // Creator can update everything
+        ((resource.data.creatorId == request.auth.uid || resource.data.creatorId == 'system') && isValidMatch(request.resource.data)) ||
+        // Other users can join/leave (modify players and potentially status)
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['players', 'status']) &&
+         request.resource.data.players.size() <= resource.data.maxPlayers)
+      );
+    }
+
+    // --- Messages ---
+    match /matches/{matchId}/messages/{msgId} {
+      function isParticipant(mId) {
+        return get(/databases/$(database)/documents/matches/$(mId)).data.players.hasAny([request.auth.uid]);
+      }
+
+      allow read: if isSignedIn() && isParticipant(matchId);
+      allow create: if isSignedIn() && isParticipant(matchId) && 
+                    request.resource.data.senderId == request.auth.uid;
+    }
+  }
+}
