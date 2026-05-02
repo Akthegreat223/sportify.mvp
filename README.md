@@ -152,4 +152,4 @@ If you're interested or want to play:
 
 To become the go-to platform for finding and playing sports locally.
 
-From one city → to everywhere.
+From one city → to everywhere..
